@@ -1,0 +1,73 @@
+/* Additions for the blind data-collection page; everything else comes from /style.css. */
+
+/* Green accent so this page can't be mistaken for the main (blue) app. */
+:root {
+  --accent: #178a52;
+  --accent-text: #ffffff;
+  --accent-soft: rgba(23, 138, 82, 0.14);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --accent: #3ccf8e;
+    --accent-text: #06170f;
+    --accent-soft: rgba(60, 207, 142, 0.18);
+  }
+}
+
+.stage-done {
+  text-align: center;
+  padding: 24px;
+}
+
+.stage-done p {
+  margin: 0;
+  max-width: 28ch;
+  font-size: 1.1rem;
+}
+
+.done-check {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--success);
+  color: #fff;
+  font-size: 1.8rem;
+  line-height: 1;
+}
+
+.upload-state {
+  margin: 20px 0 0;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.upload-state.is-error {
+  background: rgba(217, 58, 58, 0.1);
+  color: var(--danger);
+}
+
+/* "Smile Please" picture shown over the camera view while the clip records. The background continues the
+   picture's own yellow gradient so the letterboxing around the square image is not noticeable. */
+.stimulus {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(circle at 50% 20%, #fffaea 0%, #fee388 45%, #ffc412 100%);
+}
+
+.stimulus[hidden] {
+  display: none;
+}
+
+.stimulus img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#0d0f13" />
+<title>Remote camera · Synced Capture</title>
+<link rel="stylesheet" href="/style.css" />
+<link rel="stylesheet" href="/thermal-remote/remote.css?v=2" />
+</head>
+<body>
+  <header class="topbar rc-topbar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">◐</span>
+      <span>Remote camera <span class="brand-sub">for Synced Capture</span></span>
+    </div>
+    <span id="linkPill" class="rc-pill">offline</span>
+  </header>
+
+  <main class="rc-main">
+    <!-- Join with a code (when the page was opened without the QR link) -->
+    <section id="joinPanel" class="panel rc-join" hidden>
+      <h2 class="panel-title">Pair with the laptop</h2>
+      <p class="panel-hint">Scan the QR code shown on the laptop's Synced Capture page, or type its 6-character code.</p>
+      <form id="joinForm" class="rc-join-form" autocomplete="off">
+        <input id="codeInput" class="rc-code" inputmode="text" autocapitalize="characters" maxlength="7"
+               placeholder="ABC123" aria-label="Pairing code" spellcheck="false" />
+        <button class="btn btn-primary" type="submit">Pair</button>
+      </form>
+      <p id="joinError" class="rc-error" hidden></p>
+    </section>
+
+    <section id="cameraPanel" class="rc-camera" hidden>
+      <div class="rc-stage" id="stage">
+        <video id="preview" autoplay playsinline muted></video>
+        <div id="stageEmpty" class="rc-stage-empty">
+          <p id="stageEmptyText">Tap <strong>Start camera</strong>. The laptop takes the photo or video.</p>
+          <button id="startBtn" class="btn btn-primary" type="button">Start camera</button>
+        </div>
+        <div class="rc-stage-top">
+          <span id="camLabel" class="rc-chip" hidden></span>
+          <span id="recBadge" class="rc-rec" hidden><span class="rc-dot"></span><span id="recText">REC</span></span>
+        </div>
+        <div id="flash" class="rc-flash" aria-hidden="true"></div>
+        <div class="rc-progress" id="recProgress" hidden><span></span></div>
+      </div>
+
+      <div class="rc-controls">
+        <button id="flipBtn" class="btn btn-ghost btn-sm" type="button" disabled>
+          <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16"><path d="M4 7h11l-3-3m8 13H9l3 3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span>Front / back</span>
+        </button>
+        <select id="cameraSelect" class="rc-select" aria-label="Choose camera" hidden></select>
+      </div>
+
+      <div class="panel rc-status-card">
+        <p id="statusLine" class="rc-status">Connecting to the laptop…</p>
+        <div class="rc-upload" id="uploadBar" hidden><span></span></div>
+        <p class="muted small" id="helpLine">Keep this page open and the screen on. Captures are started from the laptop.</p>
+      </div>
+    </section>
+  </main>
+
+  <canvas id="frameCanvas" hidden></canvas>
+  <canvas id="photoCanvas" hidden></canvas>
+  <script src="/thermal-remote/remote.js?v=2"></script>
+</body>
+</html>

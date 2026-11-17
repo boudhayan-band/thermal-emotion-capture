@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Thermal Capture · Thermal + Emotion</title>
+<link rel="stylesheet" href="/style.css" />
+<link rel="stylesheet" href="/thermal/thermal.css?v=3" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">◐</span>
+      <span>Thermal Capture <span class="brand-sub">RGB + thermal</span></span>
+    </div>
+    <a class="btn btn-ghost btn-sm" href="/admin/thermal/export" title="Download all thermal captures as Excel (admin login required)">
+      <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>Export thermal data</span>
+    </a>
+  </header>
+
+  <ol class="stepper" aria-label="Progress">
+    <li id="step1" class="step is-active"><span class="step-num">1</span><span class="step-label">Participant</span></li>
+    <li id="step2" class="step"><span class="step-num">2</span><span class="step-label">Capture</span></li>
+    <li id="step3" class="step"><span class="step-num">3</span><span class="step-label">Results</span></li>
+  </ol>
+
+  <main class="layout">
+    <!-- Step 1: participant -->
+    <section class="panel" aria-labelledby="participantHeading">
+      <h2 id="participantHeading" class="panel-title">Participant</h2>
+
+      <form id="subjectForm" class="subject-form" novalidate>
+        <p class="panel-hint">Enter who is being recorded. Every capture is saved under this person.</p>
+        <div class="field">
+          <label for="subjectName">Full name</label>
+          <input id="subjectName" name="name" type="text" autocomplete="off" required maxlength="120" placeholder="e.g. Priya Sharma" />
+          <p class="field-error" data-for="subjectName"></p>
+        </div>
+        <div class="field">
+          <label for="subjectAge">Age</label>
+          <input id="subjectAge" name="age" type="number" inputmode="numeric" min="1" max="120" required placeholder="Years" />
+          <p class="field-error" data-for="subjectAge"></p>
+        </div>
+        <fieldset class="field">
+          <legend>Gender</legend>
+          <div class="segmented" role="radiogroup">
+            <label><input type="radio" name="gender" value="Male" required /><span>Male</span></label>
+            <label><input type="radio" name="gender" value="Female" /><span>Female</span></label>
+            <label><input type="radio" name="gender" value="Other" /><span>Other</span></label>
+          </div>
+          <p class="field-error" data-for="gender"></p>
+        </fieldset>
+        <fieldset class="field">
+          <legend>Diet</legend>
+          <div class="segmented" role="radiogroup">
+            <label><input type="radio" name="diet" value="Veg" required /><span>Veg</span></label>
+            <label><input type="radio" name="diet" value="Non-Veg" /><span>Non-Veg</span></label>
+          </div>
+          <p class="field-error" data-for="diet"></p>
+        </fieldset>
+        <div class="form-actions">
+          <button id="subjectSubmitBtn" class="btn btn-primary btn-block" type="submit">Save &amp; continue</button>
+          <button id="subjectCancelBtn" class="btn btn-ghost btn-block" type="button" hidden>Cancel</button>
+        </div>
+      </form>
+
+      <div id="subjectSummary" class="subject-summary" hidden>
+        <div class="avatar" id="subjectAvatar" aria-hidden="true">?</div>
+        <div class="subject-meta">
+          <p class="subject-name" id="summaryName"></p>
+          <p class="subject-sub" id="summaryDetails"></p>
+          <p class="subject-id" id="summaryId" title="Subject ID"></p>
+        </div>
+        <div class="summary-actions">
+          <button id="editSubjectBtn" class="btn btn-ghost btn-sm" type="button">Edit</button>
+          <button id="newSubjectBtn" class="btn btn-ghost btn-sm" type="button">New participant</button>
+        </div>
+      </div>
+
+      <div class="history" id="historySection" hidden>
+        <h3 class="history-title">This session</h3>
+        <ul id="historyList" class="history-list"></ul>
+      </div>
+    </section>
+
+    <!-- Step 2: capture -->
+    <section class="panel tc-capture" aria-labelledby="captureHeading">
+      <h2 id="captureHeading" class="panel-title">Capture</h2>
+      <p id="captureLocked" class="panel-hint">Save participant details to enable capture.</p>
+
+      <div class="tc-sources">
+        <!-- RGB -->
+        <div class="tc-card" id="rgbCard">
+          <div class="tc-card-head">
+            <h3>RGB photo <span class="muted small">for emotion · optional</span></h3>
+            <div class="segmented tc-mini" role="radiogroup" aria-label="RGB source">
+              <label><input type="radio" name="rgbSource" value="camera" checked /><span>Camera</span></label>
+              <label><input type="radio" name="rgbSource" value="file" /><span>Upload</span></label>
+            </div>
+          </div>
+
+          <div id="rgbCameraPane">
+            <div class="stage tc-stage" id="stage">
+              <video id="preview" autoplay playsinline muted></video>
+              <img id="rgbStill" class="tc-still" alt="Captured RGB photo" hidden />
+              <div class="face-guide" aria-hidden="true"></div>
+              <div id="stageEmpty" class="stage-empty">
+                <p id="stageEmptyText">Turn on the phone or laptop camera.</p>
+                <button id="startBtn" class="btn btn-primary btn-sm" type="button" disabled>Turn on camera</button>
+              </div>
+              <div class="stage-top">
+                <select id="cameraSelect" class="camera-select" aria-label="Choose camera" hidden></select>
+              </div>
+            </div>
+            <div class="tc-row">
+              <button id="snapBtn" class="btn btn-primary btn-sm" type="button" disabled>Take photo</button>
+              <button id="retakeBtn" class="btn btn-ghost btn-sm" type="button" hidden>Retake</button>
+            </div>
+          </div>
+
+          <div id="rgbFilePane" hidden>
+            <label class="tc-drop" for="rgbFile">
+              <input id="rgbFile" type="file" accept="image/jpeg,image/png,image/webp" />
+              <span id="rgbFileLabel">Choose a .jpg / .png photo</span>
+            </label>
+            <img id="rgbFilePreview" class="tc-thumb" alt="" hidden />
+          </div>
+          <p id="rgbState" class="tc-state">No RGB photo yet — thermal analysis still works without it.</p>
+        </div>
+
+        <!-- Thermal -->
+        <div class="tc-card" id="thermalCard">
+          <div class="tc-card-head">
+            <h3>Thermal <span class="muted small">required</span></h3>
+            <div class="segmented tc-mini" role="radiogroup" aria-label="Thermal source">
+              <label><input type="radio" name="thermalSource" value="file" checked /><span>Upload</span></label>
+              <label><input type="radio" name="thermalSource" value="agent" /><span>Live</span></label>
+            </div>
+          </div>
+
+          <div id="thermalFilePane">
+            <label class="tc-drop" for="thermalFile">
+              <input id="thermalFile" type="file" accept=".npy,.csv,.txt,image/jpeg,image/png,image/tiff" />
+              <span id="thermalFileLabel">Choose a temperature map (.npy / .csv) or thermal image</span>
+            </label>
+            <div class="tc-row">
+              <label class="tc-inline" for="tempUnit">Temperature unit
+                <select id="tempUnit">
+                  <option value="C" selected>°C</option>
+                  <option value="F">°F</option>
+                  <option value="K">K</option>
+                  <option value="RAW64K">TC01A raw (1/64 K)</option>
+                </select>
+              </label>
+            </div>
+            <p class="muted small">A temperature map gives landmark and region temperatures. A plain image gives
+              landmarks only — use a <strong>grayscale (white-hot)</strong> palette for best results.</p>
+          </div>
+
+          <div id="thermalAgentPane" hidden>
+            <div class="tc-row">
+              <input id="agentUrl" class="tc-input" type="url" value="http://127.0.0.1:8765" aria-label="thermal-agent address" spellcheck="false" />
+              <button id="agentConnectBtn" class="btn btn-ghost btn-sm" type="button">Connect</button>
+            </div>
+            <div class="stage tc-stage tc-thermal-stage" id="agentStage">
+              <img id="agentPreview" class="tc-live" alt="Live thermal preview" hidden />
+              <div id="agentEmpty" class="stage-empty">
+                <p id="agentEmptyText">Start <code>thermal-agent</code> on this laptop with the TC01A plugged in, then press Connect.</p>
+              </div>
+              <div class="stage-top"><span id="agentBadge" class="tc-badge" hidden></span></div>
+            </div>
+            <div class="tc-row">
+              <button id="agentCaptureBtn" class="btn btn-primary btn-sm" type="button" disabled>Capture thermal</button>
+              <button id="agentRotateBtn" class="btn btn-ghost btn-sm" type="button" disabled title="Rotate the thermal image 90°">Rotate</button>
+              <button id="agentShutterBtn" class="btn btn-ghost btn-sm" type="button" disabled title="Trigger the camera's shutter (flat-field correction) before capturing">Recalibrate</button>
+            </div>
+            <p id="agentStatus" class="muted small"></p>
+          </div>
+          <p id="thermalState" class="tc-state">No thermal file yet.</p>
+        </div>
+      </div>
+
+      <div class="tc-analyze">
+        <button id="analyzeBtn" class="btn btn-primary btn-block" type="button" disabled>Analyze</button>
+        <p id="analyzeHint" class="capture-tip">Add a thermal file to analyze.</p>
+      </div>
+
+      <div id="busy" class="tc-busy" hidden><div class="spinner"></div><p>Analyzing RGB and thermal…</p></div>
+      <div id="status" class="status" role="status" aria-live="polite" hidden></div>
+    </section>
+  </main>
+
+  <canvas id="snapshotCanvas" hidden></canvas>
+
+  <!-- Step 3: results -->
+  <dialog id="resultDialog" class="result-dialog tc-result" aria-labelledby="resultTitle">
+    <button id="closeDialogBtn" class="icon-btn dialog-close" type="button" aria-label="Close results">
+      <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+
+    <div class="result-body">
+      <p class="eyebrow" id="resultTitle">Thermal + emotion result</p>
+      <p id="resultParticipant" class="muted small"></p>
+
+      <div class="tc-result-grid">
+        <section class="tc-result-col" aria-labelledby="emotionHeading">
+          <h3 id="emotionHeading">Emotion <span class="muted small">from RGB</span></h3>
+          <img id="resultRgb" class="tc-result-img" alt="RGB photo" hidden />
+          <div id="emotionBlock">
+            <p class="result-emotion"><span id="resultEmoji" aria-hidden="true"></span> <span id="resultEmotionText">—</span></p>
+            <div id="confidenceBlock" class="confidence">
+              <div class="confidence-row"><span>Confidence</span><strong id="confidenceValue">—</strong></div>
+              <div class="meter"><span id="confidenceBar"></span></div>
+            </div>
+            <dl class="tc-kv" id="affectBlock">
+              <div><dt>Valence</dt><dd id="valenceValue">—</dd></div>
+              <div><dt>Arousal</dt><dd id="arousalValue">—</dd></div>
+            </dl>
+          </div>
+          <p id="emotionMessage" class="muted small"></p>
+        </section>
+
+        <section class="tc-result-col" aria-labelledby="thermalHeading">
+          <h3 id="thermalHeading">Thermal <span class="muted small">landmarks &amp; occlusion</span></h3>
+          <img id="resultOverlay" class="tc-result-img tc-overlay" alt="Thermal image with facial landmarks" />
+          <p class="tc-legend"><span class="dot dot-ok"></span>visible <span class="dot dot-occ"></span>occluded</p>
+          <dl class="tc-kv">
+            <div><dt>Occluded points</dt><dd id="occludedValue">—</dd></div>
+            <div><dt>Frame range</dt><dd id="frameRange">—</dd></div>
+          </dl>
+          <p id="thermalMessage" class="muted small"></p>
+        </section>
+      </div>
+
+      <section id="regionsBlock" class="tc-regions" aria-labelledby="regionsHeading">
+        <h3 id="regionsHeading">Facial temperatures (°C)</h3>
+        <div class="tc-table-wrap">
+          <table class="tc-table">
+            <thead><tr><th>Region</th><th>Mean</th><th>Min</th><th>Max</th><th title="Share of the region's landmarks predicted as occluded">Occl.</th></tr></thead>
+            <tbody id="regionsBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <details class="logic">
+        <summary>All 68 landmarks</summary>
+        <div class="tc-table-wrap">
+          <table class="tc-table tc-table-compact">
+            <thead><tr><th>#</th><th>x</th><th>y</th><th>°C</th><th>Occlusion</th></tr></thead>
+            <tbody id="landmarksBody"></tbody>
+          </table>
+        </div>
+      </details>
+
+      <details class="logic">
+        <summary>How was this calculated?</summary>
+        <p>Emotion, valence and arousal come from the RGB photo (MTCNN face detector + EmotiEffLib), exactly as on the
+          emotion pages. The thermal frame is cropped to the face (found from skin temperature, 30–40 °C), rendered as a
+          white-hot grayscale image and passed to the M3MSTL model (ResNet-50 + Vision Transformer, trained on the TFD68
+          thermal face dataset), which predicts 68 facial landmarks and whether each is occluded. Temperatures are read
+          from the camera's temperature map: a 3×3 median at each landmark, and min / mean / max over each facial region.
+          The released model does not use temperature itself; it works from the image.</p>
+      </details>
+
+      <div class="tc-links" id="mediaLinks"></div>
+    </div>
+
+    <div class="result-actions">
+      <button id="newParticipantFromResultBtn" class="btn btn-ghost" type="button">New participant</button>
+      <button id="captureAgainBtn" class="btn btn-primary" type="button" autofocus>Capture again</button>
+    </div>
+  </dialog>
+
+  <script src="/thermal/thermal.js?v=5"></script>
+</body>
+</html>

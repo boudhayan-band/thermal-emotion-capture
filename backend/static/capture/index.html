@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Thermal + Emotion Capture</title>
+<link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">◐</span>
+      <span>Thermal + Emotion Capture</span>
+    </div>
+    <a class="btn btn-ghost btn-sm" href="/admin/" title="Analyze and export the collected data (admin login required)">
+      <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16"><path d="M4 20V10m6 10V4m6 16v-7m4 7H2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>Research dashboard</span>
+    </a>
+  </header>
+
+  <ol class="stepper" aria-label="Progress">
+    <li id="step1" class="step is-active"><span class="step-num">1</span><span class="step-label">Participant</span></li>
+    <li id="step2" class="step"><span class="step-num">2</span><span class="step-label">Capture</span></li>
+    <li id="step3" class="step"><span class="step-num">3</span><span class="step-label">Results</span></li>
+  </ol>
+
+  <main class="layout">
+    <!-- Step 1: participant -->
+    <section class="panel" aria-labelledby="participantHeading">
+      <h2 id="participantHeading" class="panel-title">Participant</h2>
+
+      <form id="subjectForm" class="subject-form" novalidate>
+        <p class="panel-hint">Enter who is being recorded. Every capture is saved under this person.</p>
+        <div class="field">
+          <label for="subjectName">Full name</label>
+          <input id="subjectName" name="name" type="text" autocomplete="off" required maxlength="120" placeholder="e.g. Priya Sharma" />
+          <p class="field-error" data-for="subjectName"></p>
+        </div>
+        <div class="field">
+          <label for="subjectAge">Age</label>
+          <input id="subjectAge" name="age" type="number" inputmode="numeric" min="1" max="120" required placeholder="Years" />
+          <p class="field-error" data-for="subjectAge"></p>
+        </div>
+        <fieldset class="field">
+          <legend>Gender</legend>
+          <div class="segmented" role="radiogroup">
+            <label><input type="radio" name="gender" value="Male" required /><span>Male</span></label>
+            <label><input type="radio" name="gender" value="Female" /><span>Female</span></label>
+            <label><input type="radio" name="gender" value="Other" /><span>Other</span></label>
+          </div>
+          <p class="field-error" data-for="gender"></p>
+        </fieldset>
+        <fieldset class="field">
+          <legend>Diet</legend>
+          <div class="segmented" role="radiogroup">
+            <label><input type="radio" name="diet" value="Veg" required /><span>Veg</span></label>
+            <label><input type="radio" name="diet" value="Non-Veg" /><span>Non-Veg</span></label>
+          </div>
+          <p class="field-error" data-for="diet"></p>
+        </fieldset>
+        <div class="form-actions">
+          <button id="subjectSubmitBtn" class="btn btn-primary btn-block" type="submit">Save &amp; continue</button>
+          <button id="subjectCancelBtn" class="btn btn-ghost btn-block" type="button" hidden>Cancel</button>
+        </div>
+      </form>
+
+      <div id="subjectSummary" class="subject-summary" hidden>
+        <div class="avatar" id="subjectAvatar" aria-hidden="true">?</div>
+        <div class="subject-meta">
+          <p class="subject-name" id="summaryName"></p>
+          <p class="subject-sub" id="summaryDetails"></p>
+          <p class="subject-id" id="summaryId" title="Subject ID"></p>
+        </div>
+        <div class="summary-actions">
+          <button id="editSubjectBtn" class="btn btn-ghost btn-sm" type="button">Edit</button>
+          <button id="newSubjectBtn" class="btn btn-ghost btn-sm" type="button">New participant</button>
+        </div>
+      </div>
+
+      <div class="history" id="historySection" hidden>
+        <h3 class="history-title">This session</h3>
+        <ul id="historyList" class="history-list"></ul>
+      </div>
+    </section>
+
+    <!-- Step 2: capture -->
+    <section class="panel stage-panel" aria-labelledby="captureHeading">
+      <h2 id="captureHeading" class="visually-hidden">Capture</h2>
+
+      <div class="stage" id="stage">
+        <video id="preview" autoplay playsinline muted></video>
+        <div class="face-guide" aria-hidden="true"></div>
+
+        <div id="stageEmpty" class="stage-empty">
+          <svg aria-hidden="true" viewBox="0 0 24 24" width="40" height="40"><path d="M15 10l4.55-2.28A1 1 0 0 1 21 8.62v6.76a1 1 0 0 1-1.45.9L15 14M5 18h8a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <p id="stageEmptyText">Add participant details to get started.</p>
+          <button id="startBtn" class="btn btn-primary" type="button" disabled>Turn on camera</button>
+        </div>
+
+        <div class="stage-top">
+          <select id="cameraSelect" class="camera-select" aria-label="Choose camera" hidden></select>
+          <div id="recBadge" class="rec-badge" hidden><span class="rec-dot"></span>REC <span id="timer">5</span>s</div>
+        </div>
+
+        <div id="recProgress" class="rec-progress" hidden><span></span></div>
+
+        <div id="stageBusy" class="stage-busy" hidden>
+          <div class="spinner"></div>
+          <p>Analyzing expression…</p>
+        </div>
+      </div>
+
+      <div class="capture-bar">
+        <div class="segmented mode-toggle" role="radiogroup" aria-label="Capture mode">
+          <label><input type="radio" name="mode" value="photo" checked /><span>Photo</span></label>
+          <label><input type="radio" name="mode" value="video" /><span>5-sec video</span></label>
+        </div>
+        <button id="shutterBtn" class="shutter" type="button" disabled>
+          <span class="shutter-ring"><span class="shutter-core"></span></span>
+          <span id="shutterLabel" class="shutter-label">Take photo</span>
+        </button>
+        <p id="captureTip" class="capture-tip">Face the camera in good light, with one face in frame.</p>
+      </div>
+
+      <div id="status" class="status" role="status" aria-live="polite" hidden></div>
+    </section>
+  </main>
+
+  <canvas id="snapshotCanvas" hidden></canvas>
+
+  <!-- Step 3: results -->
+  <dialog id="resultDialog" class="result-dialog" aria-labelledby="resultEmotion">
+    <button id="closeDialogBtn" class="icon-btn dialog-close" type="button" aria-label="Close results">
+      <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+
+    <div class="result-body">
+      <div class="result-hero">
+        <img id="resultImage" class="result-image" alt="Captured frame" />
+        <div class="result-summary">
+          <p class="eyebrow" id="resultKind">Photo result</p>
+          <h2 id="resultEmotion" class="result-emotion"><span id="resultEmoji" aria-hidden="true"></span> <span id="resultEmotionText">—</span></h2>
+
+          <div id="confidenceBlock" class="confidence">
+            <div class="confidence-row">
+              <span>Confidence</span>
+              <strong id="confidenceValue">—</strong>
+            </div>
+            <div class="meter"><span id="confidenceBar"></span></div>
+            <p id="confidenceNote" class="muted small"></p>
+          </div>
+
+          <p id="resultParticipant" class="muted small"></p>
+        </div>
+      </div>
+
+      <div id="noFaceBlock" class="notice" hidden>
+        <strong id="noFaceTitle">No face found</strong>
+        <p id="noFaceMessage"></p>
+        <ul>
+          <li>Move closer so the face fills the oval guide.</li>
+          <li>Turn toward a light source; avoid strong backlight.</li>
+          <li>Remove anything covering the face (mask, hand, hair).</li>
+        </ul>
+      </div>
+
+      <section id="moodBlock" class="mood" aria-labelledby="moodHeading">
+        <h3 id="moodHeading">Mood map</h3>
+        <div class="mood-grid">
+          <svg id="moodChart" class="mood-chart" viewBox="0 0 200 200" role="img" aria-labelledby="moodSummary">
+            <rect x="1" y="1" width="198" height="198" rx="12" class="mood-bg" />
+            <line x1="100" y1="12" x2="100" y2="188" class="mood-axis" />
+            <line x1="12" y1="100" x2="188" y2="100" class="mood-axis" />
+            <text x="190" y="94" text-anchor="end" class="mood-axis-label">Pleasant</text>
+            <text x="10" y="94" class="mood-axis-label">Unpleasant</text>
+            <text x="106" y="20" class="mood-axis-label">Energized</text>
+            <text x="106" y="188" class="mood-axis-label">Calm</text>
+            <g id="moodTrail"></g>
+            <circle id="moodDot" cx="100" cy="100" r="7" class="mood-dot" />
+          </svg>
+          <div class="mood-text">
+            <p id="moodSummary" class="mood-summary">—</p>
+            <dl class="mood-values">
+              <div><dt>Valence <span class="muted">unpleasant → pleasant</span></dt><dd id="valenceValue">—</dd></div>
+              <div><dt>Arousal <span class="muted">calm → energized</span></dt><dd id="arousalValue">—</dd></div>
+            </dl>
+          </div>
+        </div>
+      </section>
+
+      <section id="framesBlock" class="frames" hidden>
+        <h3>Over the 5 seconds</h3>
+        <p class="muted small">Each sampled frame was analyzed separately; the final result averages them.</p>
+        <ol id="framesList" class="frames-list"></ol>
+      </section>
+
+      <details id="logicBlock" class="logic" hidden>
+        <summary>How was this calculated?</summary>
+        <p id="logicText"></p>
+      </details>
+
+      <a id="mediaLink" class="media-link" target="_blank" rel="noopener" hidden>Open saved recording ↗</a>
+    </div>
+
+    <div class="result-actions">
+      <button id="newParticipantFromResultBtn" class="btn btn-ghost" type="button">New participant</button>
+      <button id="captureAgainBtn" class="btn btn-primary" type="button" autofocus>Capture again</button>
+    </div>
+  </dialog>
+
+  <script src="/capture/app.js?v=3"></script>
+</body>
+</html>

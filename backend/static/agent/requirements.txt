@@ -1,0 +1,6 @@
+numpy>=1.21
+opencv-python-headless>=4.5
+# Community Fluke iSee TC01A driver (MIT, unofficial), pinned to a reviewed commit.
+tc01a @ git+https://github.com/dazchi/tc01a-python@4252e4006a4ec227367df0e564b47f1956809569
+# Self-signed localhost certificate for the Safari (HTTPS) port.
+cryptography>=41

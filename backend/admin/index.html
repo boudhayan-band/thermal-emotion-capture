@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Thermal + Emotion Capture · Research dashboard</title>
+<link rel="stylesheet" href="/style.css" />
+<link rel="stylesheet" href="/admin/admin.css?v=5" />
+</head>
+<body class="admin">
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">◐</span>
+      <span>Thermal + Emotion Capture <span class="brand-sub">Research dashboard</span></span>
+    </div>
+    <nav class="section-switch" aria-label="Dashboard section">
+      <a href="/admin/" aria-current="page">Emotion captures</a>
+      <a href="/admin/thermal/">Thermal readings</a>
+    </nav>
+    <div class="topbar-actions">
+      <span id="loadedAt" class="muted small"></span>
+      <button id="refreshBtn" class="btn btn-ghost btn-sm" type="button">Refresh</button>
+      <button id="csvBtn" class="btn btn-ghost btn-sm" type="button" title="Captures matching the current filters">Captures CSV</button>
+      <button id="framesCsvBtn" class="btn btn-ghost btn-sm" type="button" title="Per-frame / per-face results for the filtered captures">Frames CSV</button>
+      <a class="btn btn-ghost btn-sm" href="/admin/export">Excel (all)</a>
+      <a class="btn btn-ghost btn-sm" href="/">Capture app ↗</a>
+    </div>
+  </header>
+
+  <main class="admin-main">
+    <section class="panel filters" aria-label="Filters">
+      <div class="filter-when" role="group" aria-labelledby="whenLabel">
+        <div class="filter">
+          <label id="whenLabel" for="fFromDate">From</label>
+          <div class="range-pair">
+            <input id="fFromDate" type="date" aria-label="From date" />
+            <input id="fFromTime" type="time" aria-label="From time (optional, defaults to 00:00)" title="Optional. Empty means start of day (00:00)" />
+          </div>
+        </div>
+        <span class="when-arrow muted" aria-hidden="true">→</span>
+        <div class="filter">
+          <label for="fToDate">To</label>
+          <div class="range-pair">
+            <input id="fToDate" type="date" aria-label="To date" />
+            <input id="fToTime" type="time" aria-label="To time (optional, defaults to end of day)" title="Optional. Empty means end of day (23:59)" />
+          </div>
+        </div>
+        <div class="presets" role="group" aria-label="Quick ranges">
+          <button type="button" class="preset" data-range="today">Today</button>
+          <button type="button" class="preset" data-range="24h">Last 24 h</button>
+          <button type="button" class="preset" data-range="7d">Last 7 days</button>
+          <button type="button" class="preset" data-range="all">All time</button>
+        </div>
+        <p id="rangeNote" class="range-note" aria-live="polite"></p>
+      </div>
+      <div class="filter">
+        <label for="fMedia">Media</label>
+        <select id="fMedia"><option value="">All</option><option value="image">Photo</option><option value="video">Video</option></select>
+      </div>
+      <div class="filter">
+        <label for="fDiet">Diet</label>
+        <select id="fDiet"><option value="">All</option><option>Veg</option><option>Non-Veg</option></select>
+      </div>
+      <div class="filter filter-age">
+        <label for="fAgeMin">Age</label>
+        <div class="range-pair">
+          <input id="fAgeMin" type="number" min="1" max="120" placeholder="min" />
+          <span class="muted">–</span>
+          <input id="fAgeMax" type="number" min="1" max="120" placeholder="max" />
+        </div>
+      </div>
+      <div class="filter">
+        <label for="fEmotion">Emotion</label>
+        <select id="fEmotion"><option value="">All</option></select>
+      </div>
+      <div class="filter">
+        <label for="fMinConf">Min confidence</label>
+        <input id="fMinConf" type="number" min="0" max="100" step="5" placeholder="%" />
+      </div>
+      <div class="filter filter-grow">
+        <label for="fSearch">Participant</label>
+        <input id="fSearch" type="search" placeholder="Name or subject ID" />
+      </div>
+      <div class="filter filter-checks">
+        <label class="check"><input id="fFaceOnly" type="checkbox" /> Face detected only</label>
+        <label class="check"><input id="fShowExcluded" type="checkbox" /> Include excluded</label>
+      </div>
+      <button id="resetBtn" class="btn btn-ghost btn-sm" type="button">Reset</button>
+    </section>
+
+    <section class="kpis" id="kpis" aria-label="Summary"></section>
+
+    <nav class="tabs" role="tablist" aria-label="Views">
+      <button role="tab" class="tab" data-tab="overview" aria-selected="true">Overview</button>
+      <button role="tab" class="tab" data-tab="explorer" aria-selected="false">Explorer</button>
+      <button role="tab" class="tab" data-tab="diet" aria-selected="false">Veg vs Non-Veg</button>
+      <button role="tab" class="tab" data-tab="compare" aria-selected="false">Compare groups</button>
+      <button role="tab" class="tab" data-tab="captures" aria-selected="false">Captures</button>
+      <button role="tab" class="tab" data-tab="participants" aria-selected="false">Participants</button>
+      <button role="tab" class="tab" data-tab="rejected" aria-selected="false">Rejected<span id="rejectedCount"></span></button>
+    </nav>
+
+    <div id="emptyState" class="panel empty-state" hidden>
+      <p><strong id="emptyTitle">No captures match these filters.</strong></p>
+      <p class="muted small">Loosen or reset the filters above.</p>
+    </div>
+
+    <!-- Overview -->
+    <section class="tab-panel" data-panel="overview">
+      <div class="grid-2">
+        <article class="panel card">
+          <h3 class="card-title">Emotion distribution</h3>
+          <p class="card-sub">Final predicted emotion per capture</p>
+          <div id="chartEmotions" class="chart"></div>
+        </article>
+        <article class="panel card">
+          <h3 class="card-title">Mood map</h3>
+          <p class="card-sub">Valence × arousal per capture · click a dot to open it</p>
+          <div id="chartMood" class="chart chart-square"></div>
+          <div id="legendMood" class="legend"></div>
+        </article>
+      </div>
+      <article class="panel card">
+        <h3 class="card-title">Captures over time</h3>
+        <p class="card-sub">Captures per day</p>
+        <div id="chartTimeline" class="chart"></div>
+      </article>
+    </section>
+
+    <!-- Explorer -->
+    <section class="tab-panel" data-panel="explorer" hidden>
+      <article class="panel card">
+        <div class="card-head">
+          <div>
+            <h3 class="card-title">Variable explorer</h3>
+            <p class="card-sub" id="explorerSub"></p>
+          </div>
+          <div class="controls">
+            <label>Unit
+              <select id="xUnit"><option value="capture">Captures</option><option value="frame">Video frames</option></select>
+            </label>
+            <label>X <select id="xVar"></select></label>
+            <label>Y <select id="yVar"></select></label>
+            <label>Color <select id="xColor"></select></label>
+            <label class="check"><input id="xFit" type="checkbox" checked /> Trend line</label>
+          </div>
+        </div>
+        <div id="chartExplorer" class="chart chart-wide"></div>
+        <div id="legendExplorer" class="legend"></div>
+        <div id="explorerStats" class="stat-strip"></div>
+      </article>
+    </section>
+
+    <!-- Veg vs Non-Veg -->
+    <section class="tab-panel" data-panel="diet" hidden>
+      <article class="panel card">
+        <div class="card-head">
+          <div>
+            <h3 class="card-title" id="dietTitle">Valence and arousal: Veg vs Non-Veg</h3>
+            <p class="card-sub" id="dietSub"></p>
+          </div>
+          <div class="controls">
+            <label>Chart
+              <select id="dView">
+                <option value="moodmap">Mood map with group means</option>
+                <option value="box">Box plot with points</option>
+                <option value="means">Mean ± 95% CI</option>
+                <option value="hist">Histogram (share of group)</option>
+                <option value="ecdf">Cumulative distribution</option>
+                <option value="clip">Over the clip (video)</option>
+              </select>
+            </label>
+            <label>Unit
+              <select id="dUnit">
+                <option value="participant">Participants (one mean each)</option>
+                <option value="capture">Captures</option>
+              </select>
+            </label>
+            <label id="dMetricWrap">Metric
+              <select id="dMetric"><option value="valence">Valence</option><option value="arousal">Arousal</option></select>
+            </label>
+          </div>
+        </div>
+        <div id="chartDiet" class="chart"></div>
+        <div id="legendDiet" class="legend"></div>
+        <div id="dietTest" class="stat-strip"></div>
+        <div class="table-wrap"><table id="dietTable" class="data-table"></table></div>
+      </article>
+    </section>
+
+    <!-- Compare -->
+    <section class="tab-panel" data-panel="compare" hidden>
+      <article class="panel card">
+        <div class="card-head">
+          <div>
+            <h3 class="card-title">Group comparison</h3>
+            <p class="card-sub">Mean with 95% confidence interval; captures without a detected face are left out</p>
+          </div>
+          <div class="controls">
+            <label>Group by
+              <select id="cGroup">
+                <option value="diet">Diet</option>
+                <option value="media_type">Media type</option>
+                <option value="age_band">Age band</option>
+                <option value="emotion">Predicted emotion</option>
+                <option value="subject">Participant</option>
+              </select>
+            </label>
+            <label id="cBandWrap">Band width
+              <select id="cBand"><option>5</option><option selected>10</option><option>15</option><option>20</option></select>
+            </label>
+            <label>Metric
+              <select id="cMetric"><option value="valence">Valence</option><option value="arousal">Arousal</option><option value="confidence">Confidence</option></select>
+            </label>
+          </div>
+        </div>
+        <div id="chartCompare" class="chart"></div>
+        <div id="compareTest" class="stat-strip"></div>
+        <div class="table-wrap"><table id="compareTable" class="data-table"></table></div>
+      </article>
+      <article class="panel card">
+        <h3 class="card-title">Emotion mix by group</h3>
+        <p class="card-sub">Share of captures per predicted emotion</p>
+        <div id="chartMix" class="chart"></div>
+        <div id="legendMix" class="legend"></div>
+      </article>
+    </section>
+
+    <!-- Captures -->
+    <section class="tab-panel" data-panel="captures" hidden>
+      <article class="panel card">
+        <div class="card-head">
+          <div>
+            <h3 class="card-title">Captures</h3>
+            <p class="card-sub" id="capturesSub">Click a row for media and frame-by-frame results</p>
+          </div>
+        </div>
+        <div class="table-wrap"><table id="capturesTable" class="data-table sortable"></table></div>
+      </article>
+    </section>
+
+    <!-- Participants -->
+    <section class="tab-panel" data-panel="participants" hidden>
+      <article class="panel card">
+        <div class="card-head">
+          <div>
+            <h3 class="card-title">Participants</h3>
+            <p class="card-sub">Aggregated over the filtered captures · click a row to see that participant's captures</p>
+          </div>
+        </div>
+        <div class="table-wrap"><table id="participantsTable" class="data-table sortable"></table></div>
+      </article>
+    </section>
+
+    <!-- Rejected -->
+    <section class="tab-panel" data-panel="rejected" hidden>
+      <article class="panel card">
+        <h3 class="card-title">Why captures were rejected</h3>
+        <p class="card-sub" id="rejectedSub"></p>
+        <div id="chartRejected" class="chart"></div>
+        <dl id="rejectedReasons" class="reason-list"></dl>
+      </article>
+      <article class="panel card">
+        <h3 class="card-title">Rejected captures</h3>
+        <p class="card-sub">Click a row to view the stored photo or video and see what went wrong</p>
+        <div class="table-wrap"><table id="rejectedTable" class="data-table sortable clickable"></table></div>
+      </article>
+    </section>
+  </main>
+
+  <div id="tooltip" class="tooltip" role="tooltip" hidden></div>
+
+  <dialog id="detailDialog" class="detail-dialog" aria-labelledby="detailTitle">
+    <button id="detailClose" class="icon-btn dialog-close" type="button" aria-label="Close">
+      <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+    <div class="detail-body">
+      <div class="detail-hero">
+        <div id="detailMedia" class="detail-media"></div>
+        <div class="detail-meta">
+          <p class="eyebrow" id="detailKind"></p>
+          <h2 id="detailTitle" class="detail-title"></h2>
+          <dl id="detailFacts" class="facts"></dl>
+          <label class="check exclude-toggle"><input id="detailExclude" type="checkbox" /> Exclude from analysis <span class="muted small">(saved in this browser)</span></label>
+        </div>
+      </div>
+      <section id="detailFramesBlock">
+        <h3 class="card-title">Frame by frame</h3>
+        <p class="card-sub">Valence and arousal of each sampled frame; the strip shows the predicted emotion per frame</p>
+        <div id="chartFrames" class="chart"></div>
+        <div id="legendFrames" class="legend"></div>
+        <div class="table-wrap"><table id="framesTable" class="data-table compact"></table></div>
+      </section>
+      <p id="detailMessage" class="muted small"></p>
+    </div>
+  </dialog>
+
+  <script src="/admin/admin.js?v=6"></script>
+</body>
+</html>

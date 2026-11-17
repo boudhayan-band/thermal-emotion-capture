@@ -1,0 +1,138 @@
+/* Remote camera page (phone). Builds on /style.css. */
+
+.brand-sub { color: var(--muted); font-weight: 500; font-size: 0.85em; margin-left: 4px; }
+
+.rc-topbar { position: sticky; top: 0; z-index: 5; }
+@media (max-width: 440px) { .rc-topbar .brand-sub { display: none; } }
+
+.rc-pill {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--muted);
+  border: 1px solid var(--border);
+  white-space: nowrap;
+}
+.rc-pill.is-on { background: rgba(31, 157, 97, 0.14); color: var(--success); border-color: rgba(31, 157, 97, 0.35); }
+.rc-pill.is-warn { background: var(--warn-bg); color: #8a5a00; border-color: var(--warn-border); }
+.rc-pill.is-rec { background: rgba(217, 58, 58, 0.14); color: var(--danger); border-color: rgba(217, 58, 58, 0.4); }
+
+.rc-main {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 12px 12px calc(24px + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.rc-join-form { display: flex; gap: 8px; margin-top: 8px; }
+.rc-code {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  text-align: center;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+}
+.rc-error { color: var(--danger); margin: 8px 0 0; font-size: 0.9rem; }
+
+.rc-camera { display: flex; flex-direction: column; gap: 10px; }
+
+.rc-stage {
+  position: relative;
+  background: var(--stage-bg);
+  border-radius: var(--radius);
+  overflow: hidden;
+  aspect-ratio: 3 / 4;
+  max-height: 68vh;
+  width: 100%;
+}
+@media (orientation: landscape) { .rc-stage { aspect-ratio: 16 / 9; } }
+.rc-stage video { width: 100%; height: 100%; object-fit: contain; display: block; background: #000; }
+.rc-stage.is-mirrored video { transform: scaleX(-1); }
+.rc-stage.is-recording { box-shadow: inset 0 0 0 3px var(--danger); }
+
+.rc-stage-empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 24px;
+  text-align: center;
+  color: #d9dde4;
+}
+.rc-stage-empty[hidden] { display: none; }
+
+.rc-stage-top {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  right: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  pointer-events: none;
+}
+.rc-chip, .rc-rec {
+  font-size: 0.8rem;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  backdrop-filter: blur(6px);
+}
+.rc-chip[hidden], .rc-rec[hidden] { display: none; }
+.rc-rec { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; font-weight: 700; }
+.rc-dot { width: 9px; height: 9px; border-radius: 50%; background: #ff4d4d; animation: rc-blink 1s infinite; }
+@keyframes rc-blink { 50% { opacity: 0.25; } }
+
+.rc-flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; }
+.rc-flash.is-on { animation: rc-flash 0.35s ease-out; }
+@keyframes rc-flash { 0% { opacity: 0.85; } 100% { opacity: 0; } }
+
+.rc-progress, .rc-upload {
+  height: 5px;
+  background: rgba(255, 255, 255, 0.18);
+  overflow: hidden;
+}
+.rc-progress { position: absolute; left: 0; right: 0; bottom: 0; }
+.rc-progress[hidden], .rc-upload[hidden] { display: none; }
+.rc-progress span, .rc-upload span { display: block; height: 100%; width: 0; background: var(--danger); }
+.rc-progress.is-running span { animation: rc-fill var(--rec-duration, 5s) linear forwards; }
+@keyframes rc-fill { to { width: 100%; } }
+.rc-upload { background: var(--surface-2); border-radius: 999px; margin: 8px 0; }
+.rc-upload span { background: var(--accent); transition: width 0.2s; }
+
+.rc-controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.rc-select { flex: 1; min-width: 0; }
+
+.rc-status-card { padding: 14px 16px; }
+.rc-status { margin: 0; font-weight: 600; }
+.rc-status.is-error { color: var(--danger); }
+#helpLine { margin: 6px 0 0; }
+.rc-select {
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.9rem;
+}
+.rc-select[hidden] { display: none; }

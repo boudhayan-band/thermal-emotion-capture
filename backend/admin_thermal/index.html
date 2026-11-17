@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Thermal readings · Research dashboard</title>
+<link rel="stylesheet" href="/style.css" />
+<link rel="stylesheet" href="/admin/admin.css?v=5" />
+<link rel="stylesheet" href="/admin/thermal/assets/thermal-admin.css?v=2" />
+</head>
+<body class="admin">
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">◐</span>
+      <span>Thermal + Emotion Capture <span class="brand-sub">Research dashboard</span></span>
+    </div>
+    <nav class="section-switch" aria-label="Dashboard section">
+      <a href="/admin/">Emotion captures</a>
+      <a href="/admin/thermal/" aria-current="page">Thermal readings</a>
+    </nav>
+    <div class="topbar-actions">
+      <span id="loadedAt" class="muted small"></span>
+      <button id="refreshBtn" class="btn btn-ghost btn-sm" type="button">Refresh</button>
+      <button id="csvBtn" class="btn btn-ghost btn-sm" type="button" title="Thermal readings matching the current filters">Readings CSV</button>
+      <button id="framesCsvBtn" class="btn btn-ghost btn-sm" type="button" title="Per-sample thermal readings of the filtered videos">Video frames CSV</button>
+      <a class="btn btn-ghost btn-sm" href="/admin/thermal/export">Excel (all)</a>
+      <a class="btn btn-ghost btn-sm" href="/thermal-sync/">Synced capture ↗</a>
+    </div>
+  </header>
+
+  <main class="admin-main">
+    <section class="panel filters" aria-label="Filters">
+      <div class="filter-when" role="group" aria-labelledby="whenLabel">
+        <div class="filter">
+          <label id="whenLabel" for="fFromDate">From</label>
+          <input id="fFromDate" type="date" aria-label="From date" />
+        </div>
+        <span class="when-arrow muted" aria-hidden="true">→</span>
+        <div class="filter">
+          <label for="fToDate">To</label>
+          <input id="fToDate" type="date" aria-label="To date" />
+        </div>
+        <div class="presets" role="group" aria-label="Quick ranges">
+          <button type="button" class="preset" data-range="today">Today</button>
+          <button type="button" class="preset" data-range="7d">Last 7 days</button>
+          <button type="button" class="preset" data-range="all">All time</button>
+        </div>
+      </div>
+      <div class="filter">
+        <label for="fMode">Capture</label>
+        <select id="fMode"><option value="">All</option><option value="photo">Photo</option><option value="video">Video</option></select>
+      </div>
+      <div class="filter">
+        <label for="fPage">Page</label>
+        <select id="fPage"><option value="">All</option><option value="thermal">Thermal (/thermal)</option><option value="thermal-sync">Synced (/thermal-sync)</option></select>
+      </div>
+      <div class="filter">
+        <label for="fSource">RGB camera</label>
+        <select id="fSource"><option value="">All</option><option value="laptop">Laptop</option><option value="mobile">Phone</option></select>
+      </div>
+      <div class="filter">
+        <label for="fDiet">Diet</label>
+        <select id="fDiet"><option value="">All</option><option>Veg</option><option>Non-Veg</option></select>
+      </div>
+      <div class="filter">
+        <label for="fGender">Gender</label>
+        <select id="fGender"><option value="">All</option><option>Male</option><option>Female</option><option>Other</option></select>
+      </div>
+      <div class="filter">
+        <label for="fEmotion">Emotion</label>
+        <select id="fEmotion"><option value="">All</option></select>
+      </div>
+      <div class="filter">
+        <label for="fQuality">Reading quality</label>
+        <select id="fQuality">
+          <option value="" selected>All</option>
+          <option value="usable">Good or fair</option>
+          <option value="good">Good only</option>
+        </select>
+      </div>
+      <div class="filter filter-grow">
+        <label for="fSearch">Participant</label>
+        <input id="fSearch" type="search" placeholder="Name or subject ID" />
+      </div>
+      <button id="resetBtn" class="btn btn-ghost btn-sm" type="button">Reset</button>
+    </section>
+
+    <section class="kpis" id="kpis" aria-label="Summary"></section>
+
+    <nav class="tabs" role="tablist" aria-label="Views">
+      <button role="tab" class="tab" data-tab="overview" aria-selected="true">Overview</button>
+      <button role="tab" class="tab" data-tab="emotion" aria-selected="false">Thermal × emotion</button>
+      <button role="tab" class="tab" data-tab="groups" aria-selected="false">Compare groups</button>
+      <button role="tab" class="tab" data-tab="videos" aria-selected="false">Video timelines</button>
+      <button role="tab" class="tab" data-tab="readings" aria-selected="false">Readings</button>
+      <button role="tab" class="tab" data-tab="participants" aria-selected="false">Participants</button>
+    </nav>
+
+    <div id="emptyState" class="panel empty-state" hidden>
+      <p><strong id="emptyTitle">No thermal readings match these filters.</strong></p>
+      <p class="muted small">Loosen or reset the filters above.</p>
+    </div>
+
+    <!-- Overview -->
+    <section class="tab-panel" data-panel="overview">
+      <article class="panel card">
+        <h3 class="card-title">Facial temperature profile</h3>
+        <p class="card-sub">Mean temperature per facial region across the filtered readings, with 95% confidence interval. Regions that are mostly occluded in a reading are left out of that reading.</p>
+        <div id="chartProfile" class="chart"></div>
+      </article>
+      <div class="grid-2">
+        <article class="panel card">
+          <h3 class="card-title">Inner eye corner temperature</h3>
+          <p class="card-sub" id="canthusSub">Warmest inner eye corner per reading · dashed line = elevated threshold</p>
+          <div id="chartCanthus" class="chart"></div>
+        </article>
+        <article class="panel card">
+          <h3 class="card-title">Reading quality</h3>
+          <p class="card-sub">From face detection and the number of occluded landmarks (all readings in the date range, ignoring the quality filter)</p>
+          <div id="chartQuality" class="chart"></div>
+          <dl class="reason-list small" id="qualityNotes"></dl>
+        </article>
+      </div>
+      <div class="grid-2">
+        <article class="panel card">
+          <h3 class="card-title">Emotion distribution</h3>
+          <p class="card-sub">Predicted emotion from the RGB capture taken with each thermal reading</p>
+          <div id="chartEmotions" class="chart"></div>
+        </article>
+        <article class="panel card">
+          <h3 class="card-title">Readings over time</h3>
+          <p class="card-sub">Inner eye corner and whole-face mean per reading · click a dot to open it</p>
+          <div id="chartTimeline" class="chart"></div>
+          <div id="legendTimeline" class="legend"></div>
+        </article>
+      </div>
+    </section>
+
+    <!-- Thermal x emotion -->
+    <section class="tab-panel" data-panel="emotion" hidden>
+      <article class="panel card">
+        <div class="card-head">
+          <div>
+            <h3 class="card-title">What the thermal readings say about emotion</h3>
+            <p class="card-sub">Correlations between every thermal measure and valence / arousal from the same capture. Only readings with a face in both cameras are counted.</p>
+          </div>
+        </div>
+        <div class="table-wrap"><table id="corrTable" class="data-table compact"></table></div>
+        <p class="muted small" id="corrNote"></p>
+      </article>
+      <article class="panel card">
+        <div class="card-head">
+          <div>
+            <h3 class="card-title" id="emoMetricTitle">Thermal measure by predicted emotion</h3>
+            <p class="card-sub">Mean with 95% confidence interval</p>
+          </div>
+          <div class="controls">
+            <label>Thermal measure <select id="eMetric"></select></label>
+          </div>
+        </div>
+        <div id="chartByEmotion" class="chart"></div>
+        <div id="emotionTest" class="stat-strip"></div>
+      </article>
+      <div class="grid-2">
+        <article class="panel card">
+          <h3 class="card-title" id="vTitle">vs valence</h3>
+          <p class="card-sub">One dot per reading · line = least-squares fit</p>
+          <div id="chartVsValence" class="chart"></div>
+          <div id="statValence" class="stat-strip"></div>
+        </article>
+        <article class="panel card">
+          <h3 class="card-title" id="aTitle">vs arousal</h3>
+          <p class="card-sub">One dot per reading · line = least-squares fit</p>
+          <div id="chartVsArousal" class="chart"></div>
+          <div id="statArousal" class="stat-strip"></div>
+        </article>
+      </div>
+    </section>
+
+    <!-- Groups -->
+    <section class="tab-panel" data-panel="groups" hidden>
+      <article class="panel card">
+        <div class="card-head">
+          <div>
+            <h3 class="card-title">Group comparison</h3>
+            <p class="card-sub">Mean with 95% confidence interval; Welch t-test for two groups, one-way ANOVA for more</p>
+          </div>
+          <div class="controls">
+            <label>Group by
+              <select id="gGroup">
+                <option value="diet">Diet</option>
+                <option value="gender">Gender</option>
+                <option value="age_band">Age band (10 y)</option>
+                <option value="capture_mode">Photo vs video</option>
+                <option value="rgb_source">RGB camera (laptop vs phone)</option>
+                <option value="emotion">Predicted emotion</option>
+                <option value="subject">Participant</option>
+              </select>
+            </label>
+            <label>Thermal measure <select id="gMetric"></select></label>
+          </div>
+        </div>
+        <div id="chartGroups" class="chart"></div>
+        <div id="groupTest" class="stat-strip"></div>
+        <div class="table-wrap"><table id="groupTable" class="data-table compact"></table></div>
+      </article>
+    </section>
+
+    <!-- Videos -->
+    <section class="tab-panel" data-panel="videos" hidden>
+      <article class="panel card">
+        <div class="card-head">
+          <div>
+            <h3 class="card-title">Over the clip</h3>
+            <p class="card-sub" id="videoSub">Each line is one video. Times are on the RGB video's clock.</p>
+          </div>
+          <div class="controls">
+            <label>Thermal measure <select id="vMetric"></select></label>
+            <label>Show
+              <select id="vMode"><option value="raw">Absolute °C</option><option value="delta">Change from start (°C)</option></select>
+            </label>
+          </div>
+        </div>
+        <div id="chartVideos" class="chart"></div>
+        <div id="legendVideos" class="legend"></div>
+      </article>
+      <article class="panel card">
+        <h3 class="card-title">Temperature trend per region</h3>
+        <p class="card-sub">Mean slope over the clip (°C per minute) across the filtered videos, with 95% CI. Positive = warming.</p>
+        <div id="chartSlopes" class="chart"></div>
+      </article>
+    </section>
+
+    <!-- Readings -->
+    <section class="tab-panel" data-panel="readings" hidden>
+      <article class="panel card">
+        <div class="card-head">
+          <div>
+            <h3 class="card-title">Thermal readings</h3>
+            <p class="card-sub" id="readingsSub">Click a row for images, regions, landmarks and the timeline</p>
+          </div>
+        </div>
+        <div class="table-wrap"><table id="readingsTable" class="data-table sortable clickable"></table></div>
+      </article>
+    </section>
+
+    <!-- Participants -->
+    <section class="tab-panel" data-panel="participants" hidden>
+      <article class="panel card">
+        <h3 class="card-title">Participants</h3>
+        <p class="card-sub">Aggregated over the filtered readings · click a row to list that participant's readings</p>
+        <div class="table-wrap"><table id="participantsTable" class="data-table sortable clickable"></table></div>
+      </article>
+    </section>
+  </main>
+
+  <div id="tooltip" class="tooltip" role="tooltip" hidden></div>
+
+  <dialog id="detailDialog" class="detail-dialog" aria-labelledby="detailTitle">
+    <button id="detailClose" class="icon-btn dialog-close" type="button" aria-label="Close">
+      <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+    <div class="detail-body">
+      <div class="th-media" id="detailMedia"></div>
+      <div class="detail-meta">
+        <p class="eyebrow" id="detailKind"></p>
+        <h2 id="detailTitle" class="detail-title"></h2>
+        <dl id="detailFacts" class="facts"></dl>
+      </div>
+      <section id="detailTimelineBlock" hidden>
+        <h3 class="card-title">Over the clip</h3>
+        <p class="card-sub">Temperatures (left axis) and valence / arousal (right axis)</p>
+        <div id="chartDetailTimeline" class="chart"></div>
+        <div id="legendDetailTimeline" class="legend"></div>
+      </section>
+      <section>
+        <h3 class="card-title">Facial regions (°C)</h3>
+        <div class="table-wrap"><table id="detailRegions" class="data-table compact"></table></div>
+      </section>
+      <details class="logic" id="detailFramesWrap" hidden>
+        <summary>Frame by frame <span class="muted small">· click a row to see its landmarks</span></summary>
+        <figure class="frame-viewer" id="detailFrameViewer" hidden>
+          <img id="detailFrameImage" alt="Thermal frame with facial landmarks" />
+          <figcaption>
+            <button type="button" class="btn btn-ghost btn-sm frame-step" id="detailFramePrev" aria-label="Previous frame">‹</button>
+            <span id="detailFrameCaption"></span>
+            <button type="button" class="btn btn-ghost btn-sm frame-step" id="detailFrameNext" aria-label="Next frame">›</button>
+          </figcaption>
+        </figure>
+        <div class="table-wrap"><table id="detailFrames" class="data-table compact frames-table"></table></div>
+      </details>
+      <details class="logic">
+        <summary>All 68 landmarks <span class="muted small" id="detailLandmarksSub"></span></summary>
+        <div class="table-wrap"><table id="detailLandmarks" class="data-table compact"></table></div>
+      </details>
+      <p id="detailMessage" class="muted small"></p>
+      <div class="th-links" id="detailLinks"></div>
+    </div>
+  </dialog>
+
+  <script src="/admin/thermal/assets/thermal-admin.js?v=5"></script>
+</body>
+</html>

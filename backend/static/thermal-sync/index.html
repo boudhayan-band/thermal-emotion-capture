@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Synced Capture · Thermal + Emotion</title>
+<link rel="stylesheet" href="/style.css" />
+<link rel="stylesheet" href="/thermal-sync/sync.css?v=5" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">◐</span>
+      <span>Synced Capture <span class="brand-sub">RGB + thermal together</span></span>
+    </div>
+    <a class="btn btn-ghost btn-sm" href="/admin/thermal/" title="Thermal readings and analysis (admin login required)">
+      <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16"><path d="M4 20V10m6 10V4m6 16v-7m4 7H2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>Thermal dashboard</span>
+    </a>
+  </header>
+
+  <ol class="stepper" aria-label="Progress">
+    <li id="step1" class="step is-active"><span class="step-num">1</span><span class="step-label">Participant</span></li>
+    <li id="step2" class="step"><span class="step-num">2</span><span class="step-label">Capture</span></li>
+    <li id="step3" class="step"><span class="step-num">3</span><span class="step-label">Results</span></li>
+  </ol>
+
+  <main class="layout">
+    <!-- Step 1: participant -->
+    <section class="panel" aria-labelledby="participantHeading">
+      <h2 id="participantHeading" class="panel-title">Participant</h2>
+
+      <form id="subjectForm" class="subject-form" novalidate>
+        <p class="panel-hint">Enter who is being recorded. Every capture is saved under this person.</p>
+        <div class="field">
+          <label for="subjectName">Full name</label>
+          <input id="subjectName" name="name" type="text" autocomplete="off" required maxlength="120" placeholder="e.g. Priya Sharma" />
+          <p class="field-error" data-for="subjectName"></p>
+        </div>
+        <div class="field">
+          <label for="subjectAge">Age</label>
+          <input id="subjectAge" name="age" type="number" inputmode="numeric" min="1" max="120" required placeholder="Years" />
+          <p class="field-error" data-for="subjectAge"></p>
+        </div>
+        <fieldset class="field">
+          <legend>Gender</legend>
+          <div class="segmented" role="radiogroup">
+            <label><input type="radio" name="gender" value="Male" required /><span>Male</span></label>
+            <label><input type="radio" name="gender" value="Female" /><span>Female</span></label>
+            <label><input type="radio" name="gender" value="Other" /><span>Other</span></label>
+          </div>
+          <p class="field-error" data-for="gender"></p>
+        </fieldset>
+        <fieldset class="field">
+          <legend>Diet</legend>
+          <div class="segmented" role="radiogroup">
+            <label><input type="radio" name="diet" value="Veg" required /><span>Veg</span></label>
+            <label><input type="radio" name="diet" value="Non-Veg" /><span>Non-Veg</span></label>
+          </div>
+          <p class="field-error" data-for="diet"></p>
+        </fieldset>
+        <div class="form-actions">
+          <button id="subjectSubmitBtn" class="btn btn-primary btn-block" type="submit">Save &amp; continue</button>
+          <button id="subjectCancelBtn" class="btn btn-ghost btn-block" type="button" hidden>Cancel</button>
+        </div>
+      </form>
+
+      <div id="subjectSummary" class="subject-summary" hidden>
+        <div class="avatar" id="subjectAvatar" aria-hidden="true">?</div>
+        <div class="subject-meta">
+          <p class="subject-name" id="summaryName"></p>
+          <p class="subject-sub" id="summaryDetails"></p>
+          <p class="subject-id" id="summaryId" title="Subject ID"></p>
+        </div>
+        <div class="summary-actions">
+          <button id="editSubjectBtn" class="btn btn-ghost btn-sm" type="button">Edit</button>
+          <button id="newSubjectBtn" class="btn btn-ghost btn-sm" type="button">New participant</button>
+        </div>
+      </div>
+
+      <div class="history" id="historySection" hidden>
+        <h3 class="history-title">This session</h3>
+        <ul id="historyList" class="history-list"></ul>
+      </div>
+    </section>
+
+    <!-- Step 2: capture -->
+    <section class="panel tc-capture" aria-labelledby="captureHeading">
+      <h2 id="captureHeading" class="panel-title">Capture</h2>
+      <p id="captureLocked" class="panel-hint">Save participant details to enable capture.</p>
+
+      <div class="sync-modebar" id="modeBar">
+        <div class="segmented" role="radiogroup" aria-label="Capture type">
+          <label><input type="radio" name="captureMode" value="photo" checked /><span>Photo</span></label>
+          <label><input type="radio" name="captureMode" value="video" /><span>Video</span></label>
+        </div>
+        <div class="segmented" role="radiogroup" aria-label="Video length" id="durationGroup" hidden>
+          <label><input type="radio" name="duration" value="5" checked /><span>5 s</span></label>
+          <label><input type="radio" name="duration" value="10" /><span>10 s</span></label>
+        </div>
+        <p class="muted small sync-mode-note" id="modeNote">One press captures an RGB photo and a thermal frame at the same moment.</p>
+      </div>
+
+      <div class="tc-sources">
+        <!-- RGB -->
+        <div class="tc-card" id="rgbCard">
+          <div class="tc-card-head">
+            <h3>RGB camera <span class="muted small">emotion</span></h3>
+            <div class="rgb-head-right">
+              <div class="segmented segmented-sm" role="radiogroup" aria-label="RGB camera source" id="rgbSourceGroup">
+                <label><input type="radio" name="rgbSource" value="laptop" checked /><span>Laptop</span></label>
+                <label><input type="radio" name="rgbSource" value="phone" /><span>Phone</span></label>
+              </div>
+              <span id="rgbReady" class="sync-pill">off</span>
+            </div>
+          </div>
+          <div class="stage tc-stage" id="stage">
+            <video id="preview" autoplay playsinline muted></video>
+            <video id="rgbReview" class="sync-review" playsinline loop muted controls hidden></video>
+            <img id="rgbStill" class="tc-still" alt="Captured RGB photo" hidden />
+            <img id="phonePreview" class="phone-preview" alt="Live preview from the phone" hidden />
+            <div id="pairBox" class="pair-box" hidden>
+              <button id="pairCloseBtn" class="pair-close" type="button" aria-label="Close" hidden>×</button>
+              <div id="pairQr" class="pair-qr" aria-label="QR code to pair a phone"></div>
+              <div class="pair-text">
+                <p class="pair-title">Pair a phone</p>
+                <p class="pair-steps">Scan with the phone's camera app, or open the link on the phone and enter the code.</p>
+                <p id="pairCode" class="pair-code">······</p>
+                <p id="pairUrlHost" class="pair-url"></p>
+                <p id="pairStatus" class="pair-status">Preparing…</p>
+              </div>
+            </div>
+            <div class="face-guide" aria-hidden="true"></div>
+            <div id="stageEmpty" class="stage-empty">
+              <p id="stageEmptyText">Turn on the laptop or USB camera.</p>
+              <button id="startBtn" class="btn btn-primary btn-sm" type="button" disabled>Turn on camera</button>
+            </div>
+            <div class="stage-top">
+              <select id="cameraSelect" class="camera-select" aria-label="Choose camera" hidden></select>
+              <span id="phoneChip" class="camera-select phone-chip" hidden></span>
+              <span class="rec-badge" data-rec hidden><span class="rec-dot"></span><span data-rec-text>REC</span></span>
+            </div>
+            <div class="rec-progress" data-rec-progress hidden><span></span></div>
+          </div>
+          <div class="tc-row phone-row" id="phoneRow" hidden>
+            <p id="phoneStatus" class="muted small phone-status">Phone not paired.</p>
+            <button id="pairShowBtn" class="btn btn-ghost btn-sm" type="button">Pair another phone</button>
+          </div>
+        </div>
+
+        <!-- Thermal -->
+        <div class="tc-card" id="thermalCard">
+          <div class="tc-card-head">
+            <h3>Thermal <span class="muted small">TC01A</span></h3>
+            <span id="thermalReady" class="sync-pill">off</span>
+          </div>
+          <div class="tc-row">
+            <input id="agentUrl" class="tc-input" type="url" value="http://127.0.0.1:8765" aria-label="thermal-agent address" spellcheck="false" />
+            <button id="agentConnectBtn" class="btn btn-ghost btn-sm" type="button">Connect</button>
+          </div>
+          <div class="stage tc-stage tc-thermal-stage" id="agentStage">
+            <img id="agentPreview" class="tc-live" alt="Live thermal preview" hidden />
+            <div id="agentEmpty" class="stage-empty">
+              <p id="agentEmptyText">Start <code>thermal-agent</code> on this laptop with the TC01A plugged in, then press Connect.</p>
+            </div>
+            <div class="stage-top">
+              <span id="agentBadge" class="tc-badge" hidden></span>
+              <span class="rec-badge" data-rec hidden><span class="rec-dot"></span><span data-rec-text>REC</span></span>
+            </div>
+            <div class="rec-progress" data-rec-progress hidden><span></span></div>
+          </div>
+          <div class="tc-row">
+            <button id="agentRotateBtn" class="btn btn-ghost btn-sm" type="button" disabled title="Rotate the thermal image 90°">Rotate</button>
+            <button id="agentShutterBtn" class="btn btn-ghost btn-sm" type="button" disabled title="Trigger the camera's shutter (flat-field correction) before capturing">Recalibrate</button>
+          </div>
+          <p id="agentStatus" class="muted small"></p>
+        </div>
+      </div>
+
+      <div class="sync-actions">
+        <button id="captureBtn" class="btn btn-primary btn-block sync-capture" type="button" disabled>
+          <span class="sync-capture-dot" aria-hidden="true"></span><span id="captureLabel">Capture photo</span>
+        </button>
+        <div id="reviewActions" class="sync-review-actions" hidden>
+          <button id="retakeBtn" class="btn btn-ghost" type="button">Retake</button>
+          <button id="analyzeBtn" class="btn btn-primary" type="button">Analyze</button>
+        </div>
+        <p id="captureHint" class="capture-tip"></p>
+      </div>
+
+      <div id="busy" class="tc-busy" hidden><div class="spinner"></div><p id="busyText">Analyzing RGB and thermal…</p></div>
+      <div id="status" class="status" role="status" aria-live="polite" hidden></div>
+    </section>
+  </main>
+
+  <canvas id="snapshotCanvas" hidden></canvas>
+
+  <!-- Step 3: results -->
+  <dialog id="resultDialog" class="result-dialog tc-result" aria-labelledby="resultTitle">
+    <button id="closeDialogBtn" class="icon-btn dialog-close" type="button" aria-label="Close results">
+      <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+
+    <div class="result-body">
+      <p class="eyebrow" id="resultTitle">Thermal + emotion result</p>
+      <p id="resultParticipant" class="muted small"></p>
+
+      <div class="tc-result-grid">
+        <section class="tc-result-col" aria-labelledby="emotionHeading">
+          <h3 id="emotionHeading">Emotion <span class="muted small" id="emotionSub">from RGB</span></h3>
+          <img id="resultRgb" class="tc-result-img sync-mirror" alt="RGB photo" hidden />
+          <video id="resultRgbVideo" class="tc-result-img sync-mirror" controls playsinline loop muted hidden></video>
+          <div id="emotionBlock">
+            <p class="result-emotion"><span id="resultEmoji" aria-hidden="true"></span> <span id="resultEmotionText">—</span></p>
+            <div id="confidenceBlock" class="confidence">
+              <div class="confidence-row"><span>Confidence</span><strong id="confidenceValue">—</strong></div>
+              <div class="meter"><span id="confidenceBar"></span></div>
+            </div>
+            <dl class="tc-kv" id="affectBlock">
+              <div><dt id="valenceLabel">Valence</dt><dd id="valenceValue">—</dd></div>
+              <div><dt id="arousalLabel">Arousal</dt><dd id="arousalValue">—</dd></div>
+            </dl>
+          </div>
+          <p id="emotionMessage" class="muted small"></p>
+        </section>
+
+        <section class="tc-result-col" aria-labelledby="thermalHeading">
+          <h3 id="thermalHeading">Thermal <span class="muted small" id="thermalSub">landmarks &amp; occlusion</span></h3>
+          <img id="resultOverlay" class="tc-result-img tc-overlay" alt="Thermal image with facial landmarks" />
+          <p class="tc-legend"><span class="dot dot-ok"></span>visible <span class="dot dot-occ"></span>occluded</p>
+          <dl class="tc-kv">
+            <div><dt>Inner eye corner (max)</dt><dd id="canthusValue">—</dd></div>
+            <div><dt title="Nose tip minus forehead; more negative often means higher arousal">Nose − forehead</dt><dd id="noseDeltaValue">—</dd></div>
+            <div><dt id="occludedLabel">Occluded points</dt><dd id="occludedValue">—</dd></div>
+            <div><dt>Frame range</dt><dd id="frameRange">—</dd></div>
+            <div><dt>Reading quality</dt><dd id="qualityValue">—</dd></div>
+            <div><dt title="Right minus left inner eye corner">Eye-corner asymmetry</dt><dd id="asymValue">—</dd></div>
+          </dl>
+          <p id="thermalMessage" class="muted small"></p>
+        </section>
+      </div>
+
+      <section id="timelineBlock" class="sync-timeline" aria-labelledby="timelineHeading" hidden>
+        <h3 id="timelineHeading">Over the clip</h3>
+        <p class="muted small">Temperatures (left axis, °C) and emotion valence / arousal (right axis, −1 to +1) on one shared clock.</p>
+        <div id="timelineChart" class="sync-chart"></div>
+        <div id="timelineLegend" class="sync-legend"></div>
+      </section>
+
+      <section id="regionsBlock" class="tc-regions" aria-labelledby="regionsHeading">
+        <h3 id="regionsHeading">Facial temperatures (°C)</h3>
+        <div class="tc-table-wrap">
+          <table class="tc-table">
+            <thead id="regionsHead"></thead>
+            <tbody id="regionsBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="landmarkVideoBlock" class="sync-landmark-video" aria-labelledby="landmarkVideoHeading" hidden>
+        <h3 id="landmarkVideoHeading">Landmarks over the clip</h3>
+        <p class="muted small" id="landmarkVideoSub">Every thermal frame with its own 68 landmarks · green visible, red occluded.</p>
+        <video id="landmarkVideo" class="tc-result-img" controls loop muted playsinline></video>
+      </section>
+
+      <details class="logic" id="framesDetails" hidden>
+        <summary>Frame by frame <span class="muted small">· click a row to see its landmarks</span></summary>
+        <figure class="frame-viewer" id="frameViewer" hidden>
+          <img id="frameImage" class="tc-result-img" alt="Thermal frame with facial landmarks" />
+          <figcaption>
+            <button type="button" class="btn btn-ghost btn-sm frame-step" id="framePrevBtn" aria-label="Previous frame">‹</button>
+            <span id="frameCaption"></span>
+            <button type="button" class="btn btn-ghost btn-sm frame-step" id="frameNextBtn" aria-label="Next frame">›</button>
+          </figcaption>
+        </figure>
+        <div class="tc-table-wrap">
+          <table class="tc-table tc-table-compact frames-table">
+            <thead><tr><th>t (s)</th><th>Face</th><th>Eye corner</th><th>Nose tip</th><th>Forehead</th><th>Occluded</th><th>Emotion</th><th>Valence</th><th>Arousal</th></tr></thead>
+            <tbody id="framesBody"></tbody>
+          </table>
+        </div>
+      </details>
+
+      <details class="logic">
+        <summary>All 68 landmarks <span class="muted small" id="landmarksSub"></span></summary>
+        <div class="tc-table-wrap">
+          <table class="tc-table tc-table-compact">
+            <thead><tr><th>#</th><th>x</th><th>y</th><th>°C</th><th>Occlusion</th></tr></thead>
+            <tbody id="landmarksBody"></tbody>
+          </table>
+        </div>
+      </details>
+
+      <details class="logic">
+        <summary>How was this calculated?</summary>
+        <p>One press starts both cameras together. Emotion, valence and arousal come from the RGB photo or video
+          (MTCNN face detector + EmotiEffLib; for video, one frame every 0.2 s, averaged). Each thermal frame is cropped to the
+          face (found from skin temperature, 30–40 °C), rendered as a white-hot grayscale image and passed to the M3MSTL model
+          (ResNet-50 + Vision Transformer, trained on TFD68), which predicts 68 facial landmarks and whether each is occluded.
+          Temperatures are read from the camera's temperature map at the landmarks and over facial regions. For video, one
+          thermal frame every 0.5 s is analysed. Region values are averaged over the clip, and the slope is a straight-line fit in °C per
+          minute. The two recordings are aligned using the start times of both recorders on this laptop.</p>
+        <p>The inner eye corner is the usual stand-in for core temperature in thermal screening. A value of 37.5 °C or more is marked
+          <em>elevated</em>. The TC01A is not a medical thermometer, so treat this as an indicator only. A nose tip that is cooler than the
+          forehead is linked to stress and arousal in published studies.</p>
+      </details>
+
+      <div class="tc-links" id="mediaLinks"></div>
+    </div>
+
+    <div class="result-actions">
+      <button id="newParticipantFromResultBtn" class="btn btn-ghost" type="button">New participant</button>
+      <button id="captureAgainBtn" class="btn btn-primary" type="button" autofocus>Capture again</button>
+    </div>
+  </dialog>
+
+  <script src="/thermal-sync/sync.js?v=7"></script>
+</body>
+</html>

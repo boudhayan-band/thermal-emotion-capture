@@ -1,0 +1,26 @@
+# Python virtual environments
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Large/generated data
+*.tar.gz
+*.zip
+emotion_results.png
+
+# Local datasets and model artifacts
+data/
+
+# Local TLS certificates and private keys
+backend/certs/
+
+# Local environment / secrets
+.env
+.env.*
+
+# macOS
+.DS_Store
+**/.DS_Store
+models/

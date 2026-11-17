@@ -1,0 +1,14 @@
+fastapi
+uvicorn[standard]
+python-multipart
+numpy
+opencv-python
+matplotlib
+facenet-pytorch
+emotiefflib[torch]
+gdown
+boto3
+openpyxl
+tensorflow-cpu==2.18.1
+tf-keras==2.18.0
+qrcode>=7.4

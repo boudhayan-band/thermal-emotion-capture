@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Thermal + Emotion Capture · Data collection</title>
+<link rel="stylesheet" href="/style.css" />
+<link rel="stylesheet" href="/collect/collect.css?v=3" />
+</head>
+<body>
+  <!-- Blind data-collection variant: captures are stored and analyzed on the server, but no result is ever shown here. -->
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">◐</span>
+      <span>Thermal + Emotion Capture</span>
+    </div>
+  </header>
+
+  <ol class="stepper" aria-label="Progress">
+    <li id="step1" class="step is-active"><span class="step-num">1</span><span class="step-label">Participant</span></li>
+    <li id="step2" class="step"><span class="step-num">2</span><span class="step-label">Capture</span></li>
+    <li id="step3" class="step"><span class="step-num">3</span><span class="step-label">Done</span></li>
+  </ol>
+
+  <main class="layout">
+    <!-- Step 1: participant -->
+    <section class="panel" aria-labelledby="participantHeading">
+      <h2 id="participantHeading" class="panel-title">Participant</h2>
+
+      <form id="subjectForm" class="subject-form" novalidate>
+        <p class="panel-hint">Enter your details, then record a short video.</p>
+        <div class="field">
+          <label for="subjectName">Full name</label>
+          <input id="subjectName" name="name" type="text" autocomplete="off" required maxlength="120" placeholder="e.g. Priya Sharma" />
+          <p class="field-error" data-for="subjectName"></p>
+        </div>
+        <div class="field">
+          <label for="subjectRollNo">Roll No</label>
+          <input id="subjectRollNo" name="roll_no" type="text" autocomplete="off" required maxlength="40" placeholder="e.g. 21CS045" />
+          <p class="field-error" data-for="subjectRollNo"></p>
+        </div>
+        <div class="field">
+          <label for="subjectAge">Age</label>
+          <input id="subjectAge" name="age" type="number" inputmode="numeric" min="1" max="120" required placeholder="Years" />
+          <p class="field-error" data-for="subjectAge"></p>
+        </div>
+        <fieldset class="field">
+          <legend>Gender</legend>
+          <div class="segmented" role="radiogroup">
+            <label><input type="radio" name="gender" value="Male" required /><span>Male</span></label>
+            <label><input type="radio" name="gender" value="Female" /><span>Female</span></label>
+            <label><input type="radio" name="gender" value="Other" /><span>Other</span></label>
+          </div>
+          <p class="field-error" data-for="gender"></p>
+        </fieldset>
+        <fieldset class="field">
+          <legend>Diet</legend>
+          <div class="segmented" role="radiogroup">
+            <label><input type="radio" name="diet" value="Veg" required /><span>Veg</span></label>
+            <label><input type="radio" name="diet" value="Non-Veg" /><span>Non-Veg</span></label>
+          </div>
+          <p class="field-error" data-for="diet"></p>
+        </fieldset>
+        <div class="form-actions">
+          <button id="subjectSubmitBtn" class="btn btn-primary btn-block" type="submit">Save &amp; continue</button>
+          <button id="subjectCancelBtn" class="btn btn-ghost btn-block" type="button" hidden>Cancel</button>
+        </div>
+      </form>
+
+      <div id="subjectSummary" class="subject-summary" hidden>
+        <div class="avatar" id="subjectAvatar" aria-hidden="true">?</div>
+        <div class="subject-meta">
+          <p class="subject-name" id="summaryName"></p>
+          <p class="subject-sub" id="summaryDetails"></p>
+        </div>
+        <div class="summary-actions">
+          <button id="editSubjectBtn" class="btn btn-ghost btn-sm" type="button">Edit</button>
+          <button id="clearSubjectBtn" class="btn btn-ghost btn-sm" type="button">Start over</button>
+        </div>
+      </div>
+
+      <!-- Upload progress only: never shows any analysis result. -->
+      <p id="uploadState" class="upload-state" role="status" aria-live="polite" hidden></p>
+    </section>
+
+    <!-- Step 2: capture -->
+    <section class="panel stage-panel" aria-labelledby="captureHeading">
+      <h2 id="captureHeading" class="visually-hidden">Capture</h2>
+
+      <div class="stage" id="stage">
+        <video id="preview" autoplay playsinline muted></video>
+        <div class="face-guide" aria-hidden="true"></div>
+
+        <!-- Shown to the participant while the clip records; the camera keeps filming underneath. -->
+        <div id="stimulus" class="stimulus" hidden>
+          <img src="/collect/smile-please.png" alt="Smile please" />
+        </div>
+
+        <div id="stageEmpty" class="stage-empty">
+          <svg aria-hidden="true" viewBox="0 0 24 24" width="40" height="40"><path d="M15 10l4.55-2.28A1 1 0 0 1 21 8.62v6.76a1 1 0 0 1-1.45.9L15 14M5 18h8a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <p id="stageEmptyText">Add participant details to get started.</p>
+          <button id="startBtn" class="btn btn-primary" type="button" disabled>Turn on camera</button>
+        </div>
+
+        <div class="stage-top">
+          <select id="cameraSelect" class="camera-select" aria-label="Choose camera" hidden></select>
+          <div id="recBadge" class="rec-badge" hidden><span class="rec-dot"></span>REC <span id="timer">5</span>s</div>
+        </div>
+
+        <div id="recProgress" class="rec-progress" hidden><span></span></div>
+
+        <div id="stageDone" class="stage-busy stage-done" role="status" aria-live="polite" hidden>
+          <span class="done-check" aria-hidden="true">✓</span>
+          <p id="stageDoneText">Thank you! Your response has been recorded.</p>
+          <button id="nextParticipantBtn" class="btn btn-primary" type="button">Next participant</button>
+        </div>
+      </div>
+
+      <div class="capture-bar">
+        <button id="shutterBtn" class="shutter" type="button" disabled>
+          <span class="shutter-ring"><span class="shutter-core"></span></span>
+          <span id="shutterLabel" class="shutter-label">Capture</span>
+        </button>
+        <p id="captureTip" class="capture-tip">Face the camera in good light, with one face in frame.</p>
+      </div>
+
+      <div id="status" class="status" role="status" aria-live="polite" hidden></div>
+    </section>
+  </main>
+
+  <script src="/collect/collect.js?v=4"></script>
+</body>
+</html>
