@@ -5,6 +5,22 @@ Generated: 2026-09-09
 
 The versions below are the versions installed in backend/.venv.
 
+MODEL WEIGHTS
+-------------
+
+Thermal landmarks (M3MSTL, ResNet-50 + ViT, stage 3) - not in this repo, download separately:
+URL:          https://researchportal.hw.ac.uk/files/173698192/m3mstl.zip
+Archive:      m3mstl.zip, about 5.9 GB (Heriot-Watt University research portal)
+File to use:  train_out(final)/backbone_resnet/stage3_vit_final.h5 (384,988,256 bytes)
+MD5:          f4172a57275210a1565c6cce77cafc37
+Place it at:  backend/models/m3mstl/resnet_vit_stage3_final.h5
+              (or set M3MSTL_MODEL_PATH to wherever you keep it)
+Note:         the portal sits behind a browser check, so download it in a browser if
+              wget/curl gets a challenge page instead of the zip.
+
+Emotion (EmotiEffLib enet_b0_8_va_mtl.pt, about 16 MB): downloaded automatically to
+~/.emotiefflib/ on the first prediction; no manual step.
+
 BACKEND (Python)
 ----------------
 
